@@ -33,6 +33,11 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required!!")
     }
 
+    // Validation - phone number length
+    if (phone.length != 10) {
+        throw new ApiError(400, "Phone number should be of 10 digits!!");
+    }
+
     // check if user already exists : username, email
     const exitedUser = await User.findOne({
         $or: [{ phone }, { email }]
