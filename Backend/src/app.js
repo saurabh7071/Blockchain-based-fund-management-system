@@ -16,12 +16,11 @@ app.use(cookieParser());
 
 
 // route import
-// import userRouter from "./routes/user.route.js"
+import userRouter from "./routes/user.route.js"
 
 
 // route declaration 
-// app.use("/api/v1/users", userRouter);
-
+app.use("/api/v1/users", userRouter);
 
 // http://localhost:5000/api/v1/users/register
 // http://localhost:5000/api/v1/users/login
