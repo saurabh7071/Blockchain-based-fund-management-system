@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-import connectDB from "../config/DBConnection.js"
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { blacklistToken } from "../middlewares/auth.middleware.js";
 
 dotenv.config({
     path: './.env'
@@ -134,6 +134,12 @@ const logoutSuperAdmin = asyncHandler(async (req, res) => {
     if (!req.user) {
         throw new ApiError(401, "You must be logged in to log out");
     }
+
+    // Add the access token to the blacklist
+    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+    if (token) {
+        blacklistToken(token);
+    }
     
     await User.findByIdAndUpdate(
         req.user._id,
@@ -257,6 +263,9 @@ const getCurrentSuperAdmin = asyncHandler(async (req, res) => {
             new ApiResponse(200, req.user, "Current User Fetched Successfully")
         )
 })
+
+import mongoose from "mongoose";
+
 
 export { 
     seedScriptForSuperAdmin,

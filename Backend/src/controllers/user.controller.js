@@ -24,13 +24,19 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 // User Registration
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password, phone} = req.body;
+    const { name, email, password, phone } = req.body;
 
     // validation - not empty
     if ([name, email, password, phone].some((field) => {
         !field || field?.trim() === ""
-    })){
+    })) {
         throw new ApiError(400, "All fields are required!!")
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new ApiError(400, "Invalid email format");
     }
 
     // Validation - phone number length
@@ -69,14 +75,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // return reponse 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            201, 
-            createdUser, 
-            "User Data Registered Successfully !!"
+        .status(200)
+        .json(
+            new ApiResponse(
+                201,
+                createdUser,
+                "User Data Registered Successfully !!"
+            )
         )
-    )
 })
 
 // User Login
@@ -126,8 +132,8 @@ const loginUser = asyncHandler(async (req, res) => {
                 200,
                 {
                     user: loggedInUser,
-                    role: user.role, 
-                    accessToken, 
+                    role: user.role,
+                    accessToken,
                     refreshToken
                 },
                 "User Logged In Successfully"
@@ -140,7 +146,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     if (!req.user) {
         throw new ApiError(401, "You must be logged in to log out");
     }
-    
+
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -228,7 +234,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
     const user = await User.findById(req.user?._id).select("+password")
 
-    if(!user){
+    if (!user) {
         throw new ApiError(404, "User not Found")
     }
 
@@ -242,7 +248,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     // Check if the new password same as the old password 
     const isSameAsOldPass = await user.comparePassword(newPassword)
 
-    if(isSameAsOldPass) {
+    if (isSameAsOldPass) {
         throw new ApiError(400, "New Password can not be the same as the old Password!!")
     }
 

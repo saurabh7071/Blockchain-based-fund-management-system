@@ -18,11 +18,13 @@ app.use(cookieParser());
 // route import
 import userRouter from "./routes/user.route.js"
 import superAdminRouter from "./routes/superAdmin.route.js"
+import templeAdminRouter from "./routes/templeAdmin.route.js"
 
 
 // route declaration 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/superAdmin", superAdminRouter);
+app.use("/api/v1/templeAdmin", templeAdminRouter);
 
 // http://localhost:5000/api/v1/users/register
 // http://localhost:5000/api/v1/users/login

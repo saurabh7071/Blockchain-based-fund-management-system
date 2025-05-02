@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -27,28 +27,47 @@ const userSchema = new Schema({
         unique: true,
     },
     role: {
-        type:String,
+        type: String,
         required: true,
-        enum :["superAdmin","templeAdmin","user"],
+        enum: ["superAdmin", "templeAdmin", "user"],
         default: "user",
     },
     refreshToken: {
         type: String,
-        select: false,
+        default: null,
+        select: true,
+    },
+    templeName: {
+        type: String,
+        required: true
+    },
+    templeLocation: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['active', 'pending', 'suspended'],
+        default: 'active'
+    },
+    createdBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User", // assuming superadmin is from User model
+        required: false
     }
 }, {
-    timestamps:true,
+    timestamps: true,
 });
 
 // bcrypt - password encryption 
-userSchema.pre("save", async function(next){
-    if(!this.isModified("password")) return next();
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
 
     this.password = await bcrypt.hash(this.password, 10)
     next()
 })
 
-userSchema.methods.comparePassword = async function(password){
+userSchema.methods.comparePassword = async function (password) {
     return await bcrypt.compare(password, this.password);
 }
 
@@ -69,7 +88,7 @@ userSchema.methods.generateAccessToken = function () {
 }
 
 // Refresh Toknes 
-userSchema.methods.generateRefreshToken = function (){
+userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
