@@ -37,22 +37,37 @@ const userSchema = new Schema({
         default: null,
         select: true,
     },
+    resetOtp: {
+        type: String,
+        select: false,
+    },
+    resetOtpExpires: {
+        type: Date,
+        select: false,
+    },
+    lastOtpSentAt: {
+        type: Date,
+        select: false,
+    },
     templeName: {
         type: String,
-        required: true
     },
     templeLocation: {
         type: String,
-        required: true
     },
     status: {
         type: String,
         enum: ['active', 'pending', 'suspended'],
         default: 'active'
     },
+    loginType: {
+        type: String,
+        enum: ['email', 'google', 'facebook', 'phone'],
+        required: true
+    },
     createdBy: {
         type: Schema.Types.ObjectId,
-        ref: "User", // assuming superadmin is from User model
+        ref: "User",
         required: false
     }
 }, {

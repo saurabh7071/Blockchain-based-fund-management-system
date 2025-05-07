@@ -318,44 +318,61 @@ const getCurrentTempleAdmin = asyncHandler(async (req, res) => {
 
 // get all Temple Admins
 const getAllTempleAdmins = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, sort = "createdAt", order = "desc", status, templeName } = req.query;
+    // Parse query parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const { status, templeName, sortBy = "createdAt", order = "desc", fields } = req.query;
+
+    // Validate sorting order
+    const sortOrder = order === "asc" ? 1 : -1;
 
     // Build the query object
     const query = { role: "templeAdmin" };
-    if (status) query.status = status; // Filter by status
-    if (templeName) query.templeName = { $regex: templeName, $options: "i" }; // Filter by temple name (case-insensitive)
 
-    // Calculate pagination
-    const skip = (page - 1) * limit;
-
-    // Fetch temple admins with pagination, sorting, and filtering
-    const templeAdmins = await User.find(query)
-        .select("-password -refreshToken")
-        .sort({ [sort]: order === "asc" ? 1 : -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-
-    // Count total temple admins for metadata
-    const totalTempleAdmins = await User.countDocuments(query);
-
-    if (!templeAdmins || templeAdmins.length === 0) {
-        throw new ApiError(404, "No Temple Admins Found");
+    if (status) {
+        query.status = status; // Filter by status
     }
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    templeAdmins,
+    if (templeName) {
+        query.templeName = { $regex: new RegExp(templeName, "i") }; // Case-insensitive search
+    }
+
+    try {
+        // Count total documents matching the query
+        const totalTempleAdmins = await User.countDocuments(query);
+
+        // Fetch temple admins with pagination, sorting, and optional field selection
+        const templeAdmins = await User.find(query)
+            .sort({ [sortBy]: sortOrder }) // Dynamic sorting
+            .skip(skip)
+            .limit(limit)
+            .select(fields ? fields.split(",").join(" ") : "-password -refreshToken") // Optional field selection
+            .lean();
+
+        if (!templeAdmins || templeAdmins.length === 0) {
+            throw new ApiError(404, "No Temple Admins Found");
+        }
+
+        // Return response with pagination metadata
+        return res.status(200).json(
+            new ApiResponse(200, {
+                templeAdmins,
+                pagination: {
                     total: totalTempleAdmins,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
+                    page,
+                    limit,
+                    totalPages: Math.ceil(totalTempleAdmins / limit),
+                    hasNextPage: page * limit < totalTempleAdmins,
+                    hasPrevPage: page > 1,
                 },
-                "All Temple Admins fetched successfully"
-            )
+            }, "All Temple Admins fetched successfully")
         );
+    } catch (error) {
+        console.error("Error fetching temple admins:", error);
+        throw new ApiError(500, "Failed to fetch temple admins");
+    }
 });
 
 export {
