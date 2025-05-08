@@ -58,16 +58,21 @@ router
         addGalleryImages);
 
 // Route to delete gallery image
-router.route('/delete-gallery-image/:templeId/:imageId').delete(verifyJWT, authorizeRoles('templeAdmin'), deleteGalleryImage);
+router
+    .route('/delete-gallery-image/:templeId')
+    .delete(
+        verifyJWT, 
+        authorizeRoles('templeAdmin'), 
+        deleteGalleryImage);
 
 // Route to add special ceremonies
-router.route('/add-special-ceremony/:templeId').put(verifyJWT, authorizeRoles('templeAdmin'), addSpecialCeremony);
+router.route('/add-special-ceremony/:templeId').post(verifyJWT, authorizeRoles('templeAdmin'), addSpecialCeremony);
 
 // Route to delete special ceremony
 router.route('/delete-special-ceremony/:templeId/:ceremonyIndex').delete(verifyJWT, authorizeRoles('templeAdmin'), deleteSpecialCeremony);
 
 // Route to add upcoming events
-router.route('/add-upcoming-event/:templeId').put(verifyJWT, authorizeRoles('templeAdmin'), addUpcomingEvent);
+router.route('/add-upcoming-event/:templeId').post(verifyJWT, authorizeRoles('templeAdmin'), addUpcomingEvent);
 
 // Route to delete upcoming event
 router.route('/delete-upcoming-event/:templeId/:eventIndex').delete(verifyJWT, authorizeRoles('templeAdmin'), deleteUpcomingEvent);

@@ -446,7 +446,7 @@ const deleteGalleryImage = asyncHandler(async (req, res) => {
     if (!temple) {
         throw new ApiError(404, "Temple not found");
     }
-
+    
     // Check if image exists in the gallery
     const imageIndex = temple.photoGallery.indexOf(imageUrl);
     if (imageIndex === -1) {
@@ -460,10 +460,8 @@ const deleteGalleryImage = asyncHandler(async (req, res) => {
     }
 
     const publicId = publicIdMatch[1];
-
     try {
-        await deleteFromCloudinary(publicId);
-        console.log(`Image deleted from Cloudinary successfully: ${publicId}`);
+        await deleteFromCloudinary(publicId, "image");
     } catch (err) {
         console.warn("Failed to delete from Cloudinary. Continuing to remove from DB anyway.", err.message);
     }
@@ -472,8 +470,14 @@ const deleteGalleryImage = asyncHandler(async (req, res) => {
     temple.photoGallery.splice(imageIndex, 1);
     await temple.save();
 
-    return res.status(200).json(
-        new ApiResponse(200, temple, "Gallery image deleted successfully")
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200, 
+                { deletedImage: imageUrl },
+                "Gallery image deleted successfully"
+            )
     );
 });
 
@@ -504,19 +508,24 @@ const addSpecialCeremony = asyncHandler(async (req, res) => {
     
     try {
         await temple.save();
-        console.log(`Special ceremony added to temple: ${templeId}`);
     } catch (error) {
         console.error("Error saving special ceremony:", error);
         throw new ApiError(500, "Failed to add special ceremony");
     }
 
-    return res.status(200).json(
-        new ApiResponse(200, temple, "Special ceremony added successfully")
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200, 
+                temple.specialCeremonies,
+                "Special Ceremony added successfully"
+            )
     );
 });
 
 const deleteSpecialCeremony = asyncHandler(async (req, res) => {
-    const { templeId, index } = req.params;
+    const { templeId, ceremonyIndex} = req.params;
 
     // Validate templeId
     if (!templeId || !/^[0-9a-fA-F]{24}$/.test(templeId)) {
@@ -524,7 +533,7 @@ const deleteSpecialCeremony = asyncHandler(async (req, res) => {
     }
 
     // Validate index
-    const idx = parseInt(index);
+    const idx = parseInt(ceremonyIndex);
     if (isNaN(idx) || idx < 0) {
         throw new ApiError(400, "Invalid special ceremony index");
     }
@@ -540,19 +549,21 @@ const deleteSpecialCeremony = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid special ceremony index");
     }
 
+    // Extract the deleted ceremony
+    const deletedCeremony = temple.specialCeremonies[idx];
+
     // Remove the special ceremony
     temple.specialCeremonies.splice(idx, 1);
 
     try {
         await temple.save();
-        console.log(`Special ceremony at index ${idx} deleted from temple: ${templeId}`);
     } catch (error) {
         console.error("Error deleting special ceremony:", error);
         throw new ApiError(500, "Failed to delete special ceremony");
     }
 
     return res.status(200).json(
-        new ApiResponse(200, temple, "Special ceremony deleted successfully")
+        new ApiResponse(200, deletedCeremony, "Special ceremony deleted successfully")
     );
 });
 
@@ -583,27 +594,32 @@ const addUpcomingEvent = asyncHandler(async (req, res) => {
     
     try {
         await temple.save();
-        console.log(`Upcoming event added to temple: ${templeId}`);
     } catch (error) {
         console.error("Error saving upcoming event:", error);
         throw new ApiError(500, "Failed to add upcoming event");
     }
 
-    return res.status(201).json(
-        new ApiResponse(201, temple, "Event added successfully")
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201, 
+                temple.upcomingEvents,
+                "Event added successfully"
+            )
     );
 });
 
 const deleteUpcomingEvent = asyncHandler(async (req, res) => {
-    const { templeId, index } = req.params;
+    const { templeId, eventIndex } = req.params;
 
     // Validate templeId
     if (!templeId || !/^[0-9a-fA-F]{24}$/.test(templeId)) {
         throw new ApiError(400, "Valid Temple ID is required");
     }
 
-    const idx = parseInt(index);
-    if (isNaN(idx) || idx < 0 || idx) {
+    const idx = parseInt(eventIndex, 10);
+    if (isNaN(idx) || idx < 0) {
         throw new ApiError(400, "Invalid event index");
     }
 
@@ -617,18 +633,24 @@ const deleteUpcomingEvent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid event index");
     }
 
+    // Extract the deleted event
+    const deletedEvent = temple.upcomingEvents[idx];
+
     temple.upcomingEvents.splice(idx, 1);
     
     try {
         await temple.save();
-        console.log(`Upcoming event at index ${idx} deleted from temple: ${templeId}`);
     } catch (error) {
         console.error("Error deleting upcoming event:", error);
         throw new ApiError(500, "Failed to delete upcoming event");
     }
 
     return res.status(200).json(
-        new ApiResponse(200, temple, "Event deleted successfully")
+        new ApiResponse(
+            200, 
+            deletedEvent,
+            "Event deleted successfully"
+        )
     );
 });
 

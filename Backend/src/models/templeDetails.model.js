@@ -39,12 +39,6 @@ const templeDetailsSchema = new Schema({
         type: String, // URL to cover image
         default: "",
     },
-    
-    // coverImagePublicId: {
-    //     type: String,
-    //     default: "",
-    // },
-
     location: {
         address: { type: String, required: true },
         city: { type: String, required: true },
