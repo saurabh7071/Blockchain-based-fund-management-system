@@ -5,9 +5,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import slugify from "slugify";
 
-function getPublicIdFromUrl(url){
+function getPublicIdFromUrl(url) {
     const parts = url.split('/')
-    const publicIdWithExtension = parts[parts.length-1];
+    const publicIdWithExtension = parts[parts.length - 1];
     const publicId = publicIdWithExtension.split('.')[0];
     return publicId
 }
@@ -93,7 +93,7 @@ const createTemple = asyncHandler(async (req, res) => {
                 return image.secure_url;
             } catch (error) {
                 console.error("Error uploading photo gallery image:", error);
-                return null; 
+                return null;
             }
         })
     );
@@ -104,7 +104,7 @@ const createTemple = asyncHandler(async (req, res) => {
 
     if (req.user && req.user.role === "templeAdmin") {
         isVerified = true;
-        verifiedBy = req.user._id; 
+        verifiedBy = req.user._id;
     }
 
     const newTemple = await Temple.create({
@@ -118,7 +118,6 @@ const createTemple = asyncHandler(async (req, res) => {
         upcomingEvents,
         history,
         contactDetails,
-        reviews: [],
         coverImage: coverImage.secure_url,
         photoGallery: validPhotoGallery,
         registeredBy: req.user._id,
@@ -141,7 +140,6 @@ const createTemple = asyncHandler(async (req, res) => {
 // Update temple details
 const updateTempleDetails = asyncHandler(async (req, res) => {
     const { templeId } = req.params;
-
     const {
         templeName,
         description,
@@ -151,9 +149,10 @@ const updateTempleDetails = asyncHandler(async (req, res) => {
         activitiesAndServices,
         contactDetails,
         isVerified,
-        verifiedBy,
         verificationRemarks,
     } = req.body;
+
+    const updatedFields = {};
 
     // Validate templeId
     if (!templeId || !/^[0-9a-fA-F]{24}$/.test(templeId)) {
@@ -167,9 +166,18 @@ const updateTempleDetails = asyncHandler(async (req, res) => {
     }
 
     // Update basic fields if provided
-    if (templeName) temple.templeName = templeName;
-    if (description) temple.description = description;
-    if (history) temple.history = history;
+    if (templeName) {
+        temple.templeName = templeName;
+        updatedFields.templeName = templeName;
+    }
+    if (description) {
+        temple.description = description;
+        updatedFields.description = description;
+    }
+    if (history) {
+        temple.history = history;
+        updatedFields.history = history;
+    }
 
     // Update location if provided
     if (location) {
@@ -177,17 +185,20 @@ const updateTempleDetails = asyncHandler(async (req, res) => {
         temple.location.city = location.city || temple.location.city;
         temple.location.state = location.state || temple.location.state;
         temple.location.country = location.country || temple.location.country;
+        updatedFields.location = location;
     }
 
     // Update darshan timings
     if (darshanTimings) {
         temple.darshanTimings.morning = darshanTimings.morning || temple.darshanTimings.morning;
         temple.darshanTimings.evening = darshanTimings.evening || temple.darshanTimings.evening;
+        updatedFields.darshanTimings = darshanTimings;
     }
 
     // Update activities and services
     if (activitiesAndServices) {
         temple.activitiesAndServices = activitiesAndServices;
+        updatedFields.activitiesAndServices = activitiesAndServices;
     }
 
     // Update contact details
@@ -197,13 +208,23 @@ const updateTempleDetails = asyncHandler(async (req, res) => {
         temple.contactDetails.facebook = contactDetails.facebook || temple.contactDetails.facebook;
         temple.contactDetails.instagram = contactDetails.instagram || temple.contactDetails.instagram;
         temple.contactDetails.website = contactDetails.website || temple.contactDetails.website;
+        updatedFields.contactDetails = contactDetails;
     }
 
     // Admin-only: Verification status
-    if (req.user && (req.user.role === "admin" || req.user.role === "superAdmin")) {
-        if (typeof isVerified === "boolean") temple.isVerified = isVerified;
-        if (verifiedBy) temple.verifiedBy = verifiedBy;
-        if (verificationRemarks) temple.verificationRemarks = verificationRemarks;
+    if (req.user && req.user.role === "templeAdmin") {
+        if (typeof isVerified === "boolean") {
+            temple.isVerified = isVerified;
+            updatedFields.isVerified = isVerified;
+        }
+        if (isVerified) {
+            temple.verifiedBy = req.user._id;
+            updatedFields.verifiedBy = req.user._id;
+        }
+        if (verificationRemarks) {
+            temple.verificationRemarks = verificationRemarks;
+            updatedFields.verificationRemarks = verificationRemarks;
+        }
     }
 
     // Regenerate slug if templeName or city changed
@@ -212,22 +233,21 @@ const updateTempleDetails = asyncHandler(async (req, res) => {
             lower: true,
             strict: true,
         });
+        updatedFields.slug = temple.slug;
     }
 
     try {
         await temple.save();
-        console.log(`Temple details updated successfully: ${templeId}`);
     } catch (error) {
         console.error("Error updating temple details:", error);
         throw new ApiError(500, "Failed to update temple details");
     }
 
     return res.status(200).json(
-        new ApiResponse(200, temple, "Temple details updated successfully")
+        new ApiResponse(200, updatedFields, "Temple details updated successfully")
     );
 });
 
-// GET temple by slug or id
 const getTempleBySlugOrId = asyncHandler(async (req, res) => {
     const { templeId } = req.params;
     if (!templeId || templeId.trim() === "") {
@@ -267,7 +287,6 @@ const getTempleBySlugOrId = asyncHandler(async (req, res) => {
     );
 });
 
-// GET all temples with pagination and filtering
 const getAllTemples = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -372,11 +391,11 @@ const updateTempleCoverImage = asyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(
-                200, 
+                200,
                 { coverImage: temple.coverImage },
                 "Temple cover image updated successfully"
             )
-    );
+        );
 });
 
 const addGalleryImages = asyncHandler(async (req, res) => {
@@ -418,14 +437,14 @@ const addGalleryImages = asyncHandler(async (req, res) => {
     await temple.save();
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200, 
-            { addedImages: validImages },
-            "Gallery images added successfully"
-        )
-    );
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                { addedImages: validImages },
+                "Gallery images added successfully"
+            )
+        );
 });
 
 const deleteGalleryImage = asyncHandler(async (req, res) => {
@@ -446,7 +465,7 @@ const deleteGalleryImage = asyncHandler(async (req, res) => {
     if (!temple) {
         throw new ApiError(404, "Temple not found");
     }
-    
+
     // Check if image exists in the gallery
     const imageIndex = temple.photoGallery.indexOf(imageUrl);
     if (imageIndex === -1) {
@@ -474,11 +493,11 @@ const deleteGalleryImage = asyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(
-                200, 
+                200,
                 { deletedImage: imageUrl },
                 "Gallery image deleted successfully"
             )
-    );
+        );
 });
 
 const addSpecialCeremony = asyncHandler(async (req, res) => {
@@ -505,7 +524,7 @@ const addSpecialCeremony = asyncHandler(async (req, res) => {
     }
 
     temple.specialCeremonies.push({ name, dateTime });
-    
+
     try {
         await temple.save();
     } catch (error) {
@@ -517,15 +536,15 @@ const addSpecialCeremony = asyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(
-                200, 
+                200,
                 temple.specialCeremonies,
                 "Special Ceremony added successfully"
             )
-    );
+        );
 });
 
 const deleteSpecialCeremony = asyncHandler(async (req, res) => {
-    const { templeId, ceremonyIndex} = req.params;
+    const { templeId, ceremonyIndex } = req.params;
 
     // Validate templeId
     if (!templeId || !/^[0-9a-fA-F]{24}$/.test(templeId)) {
@@ -591,7 +610,7 @@ const addUpcomingEvent = asyncHandler(async (req, res) => {
     }
 
     temple.upcomingEvents.push({ title, description, eventDate });
-    
+
     try {
         await temple.save();
     } catch (error) {
@@ -603,11 +622,11 @@ const addUpcomingEvent = asyncHandler(async (req, res) => {
         .status(201)
         .json(
             new ApiResponse(
-                201, 
+                201,
                 temple.upcomingEvents,
                 "Event added successfully"
             )
-    );
+        );
 });
 
 const deleteUpcomingEvent = asyncHandler(async (req, res) => {
@@ -637,7 +656,7 @@ const deleteUpcomingEvent = asyncHandler(async (req, res) => {
     const deletedEvent = temple.upcomingEvents[idx];
 
     temple.upcomingEvents.splice(idx, 1);
-    
+
     try {
         await temple.save();
     } catch (error) {
@@ -647,7 +666,7 @@ const deleteUpcomingEvent = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new ApiResponse(
-            200, 
+            200,
             deletedEvent,
             "Event deleted successfully"
         )

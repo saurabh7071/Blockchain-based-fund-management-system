@@ -12,16 +12,6 @@ const specialCeremonySchema = new mongoose.Schema({
     dateTime: { type: Date, required: true },
 }, { _id: false });
 
-const reviewSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-    },
-    comment: { type: String },
-    createdAt: { type: Date, default: Date.now },
-}, { _id: false });
-
 const templeDetailsSchema = new Schema({
     templeName: {
         type: String,
@@ -83,12 +73,6 @@ const templeDetailsSchema = new Schema({
         instagram: { type: String },
         website: { type: String },
     },
-
-    reviews: {
-        type: [reviewSchema],
-        default: [],
-    },
-
     isVerified: {
         type: Boolean,
         default: false,

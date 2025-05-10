@@ -31,7 +31,7 @@ router
         createTemple);
 
 // Route to update temple details
-router.route('/update-temple/:templeId').put(verifyJWT, authorizeRoles('templeAdmin'), updateTempleDetails);
+router.route('/update-temple/:templeId').post(verifyJWT, authorizeRoles('templeAdmin'), updateTempleDetails);
 
 // Route to get temple by slug or ID
 router.route('/get-temple/:templeId').get(getTempleBySlugOrId);
