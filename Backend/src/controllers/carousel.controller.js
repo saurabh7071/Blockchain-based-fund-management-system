@@ -54,7 +54,7 @@ const addCarouselImage = asyncHandler(async (req, res) => {
     );
 });
 
-const getAllCarouselImages = asyncHandler(async (req, res) => {
+const getAllCarouselImages = asyncHandler(async (req, res) => { 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -102,8 +102,9 @@ const getAllCarouselImages = asyncHandler(async (req, res) => {
 const updateCarouselImage = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    if (!id) {
-        throw new ApiError(400, "Carousel image ID is required");
+    // Validate carousel image ID
+    if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+        throw new ApiError(400, "Valid Carousel image ID is required");
     }
 
     const { user } = req.user;
@@ -136,8 +137,8 @@ const updateCarouselImage = asyncHandler(async (req, res) => {
     }
 
     // Delete old cover image from Cloudinary if it exists
-    if (temple.coverImage) {
-        const publicId = getPublicIdFromUrl(temple.coverImage);
+    if (carousel.imageUrl) {
+        const publicId = getPublicIdFromUrl(carousel.imageUrl);
         try {
             await deleteFromCloudinary(publicId, "image");
         } catch (err) {
@@ -145,47 +146,30 @@ const updateCarouselImage = asyncHandler(async (req, res) => {
         }
     }
 
-    // Update the new image in the database
-    temple.coverImage = uploadedImage.secure_url;
-    await temple.save();
-
-    // Update image if a new file is uploaded
-    if (req.file && req.file.path) {
-        try {
-            // Delete the old image from Cloudinary
-            if (carousel.imageUrl) {
-                const publicId = getPublicIdFromUrl(carousel.imageUrl);
-                await deleteFromCloudinary(publicId);
-            }
-
-            // Upload the new image to Cloudinary
-            const uploadedImage = await uploadOnCloudinary(req.file.path);
-            if (!uploadedImage || !uploadedImage.secure_url) {
-                throw new ApiError(500, "Failed to upload new carousel image to Cloudinary");
-            }
-
-            carousel.imageUrl = uploadedImage.secure_url;
-        } catch (error) {
-            console.error("Error updating carousel image on Cloudinary:", error);
-            throw new ApiError(500, "Failed to update carousel image");
-        }
+    carousel.imageUrl = uploadedImage.secure_url;
+    if (req.body.caption) {
+        carousel.caption = req.body.caption;
     }
-
-    // Save the updated carousel image
     await carousel.save();
 
-    res.status(200).json(
-        new ApiResponse(200, carousel, "Carousel image updated successfully")
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200, 
+                carousel, 
+                "Carousel image updated successfully"
+            )
     );
 });
 
 const deleteCarouselImage = asyncHandler(async (req, res) => {
-    // Role validation
-    if (!req.user || req.user.role !== "superAdmin") {
-        throw new ApiError(403, "Only SuperAdmin can delete carousel images");
-    }
-
     const { id } = req.params;
+    
+    const { user } = req.user;
+    if (!user || user.role !== "superAdmin") {
+        throw new ApiError(403, "Only SuperAdmin can add carousel images");
+    }
 
     // Find the carousel image by ID
     const carousel = await Carousel.findById(id);
