@@ -1,39 +1,28 @@
-import type React from "react";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// app/layout.tsx
 import "./globals.css";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ReactNode } from "react";
+import Navbar from "./components/Navbar"; // Import the new Navbar
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Temple Donation Platform",
-  description: "Support temples with transparency and blockchain verification",
-  generator: "v0.dev",
+export const metadata = {
+  title: "Temple Fund Management System",
+  description: "A decentralized platform for managing temple funds securely.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: ReactNode;
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-        </ThemeProvider>
+    <html lang="en">
+      <body>
+        <header className="header">
+          <Navbar />
+        </header>
+        <main className="main-content">{children}</main>
+        <footer className="footer">
+          <p>Temple Fund - Secure and Decentralized Fund Management</p>
+        </footer>
       </body>
     </html>
   );
