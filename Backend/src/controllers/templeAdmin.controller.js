@@ -82,6 +82,7 @@ const registerTempleAdmin = asyncHandler(async (req, res) => {
         createdBy: superAdminId,
         role: "templeAdmin",
         status: "active",
+        loginType: "email"
     });
 
     await newAdmin.save();
