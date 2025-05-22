@@ -14,7 +14,7 @@ import { authorizeRoles } from "../middlewares/role.middleware.js"
 const router = Router()
 
 // router.route("/seed-script").post(seedScriptForSuperAdmin);   // if you want to add first superAdmin so temporarely active this route and after creating, active below route
-router.route("/seed-script").post(verifyJWT, authorizeRoles('superAdmin'), seedScriptForSuperAdmin);
+router.route("/seed-script").post(seedScriptForSuperAdmin);
 router.route("/login-superAdmin").post(loginSuperAdmin);
 router.route("/logout-superAdmin").post(verifyJWT, authorizeRoles("superAdmin"), logoutSuperAdmin);
 router.route("/refresh-Access-Token").post(refreshAccessToken);
